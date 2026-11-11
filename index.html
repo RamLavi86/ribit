@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ribit – מחשבון ריבית דריבית</title>
+<meta name="description" content="Ribit: כמה כסף יהיה לך? מחשבון ריבית דריבית עם הפקדות שנתיות, אינפלציה וגרף צמיחה.">
+<style>
+:root{--bg:#0b1020;--card:#151c33;--text:#eef1ff;--mute:#9aa4c7;--a:#6ee7b7;--b:#60a5fa;--c:#f472b6;--line:#26304f}
+:root[data-theme=light]{--bg:#f4f6ff;--card:#fff;--text:#12172b;--mute:#5b6485;--line:#dfe4f5}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 48px}
+header{text-align:center;padding:40px 0 24px;position:relative}
+h1{font-size:clamp(2rem,6vw,3.2rem);margin:0;background:linear-gradient(90deg,var(--a),var(--b),var(--c));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{color:var(--mute);margin:8px 0 0}
+#theme{position:absolute;top:16px;left:0;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+label{display:block;font-size:.85rem;color:var(--mute);margin-bottom:4px}
+input[type=number]{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:1.05rem}
+input[type=range]{width:100%;accent-color:var(--b)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.chip{background:var(--bg);border:1px solid var(--line);color:var(--text);padding:7px 13px;border-radius:99px;cursor:pointer;font-size:.9rem}
+.chip:hover{border-color:var(--a)}
+.big{text-align:center;padding:28px 12px}
+.big .lbl{color:var(--mute)}
+.big .num{font-size:clamp(2.2rem,9vw,4rem);font-weight:800;color:var(--a);direction:ltr}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.stat{background:var(--bg);border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.2rem;direction:ltr}
+.stat span{color:var(--mute);font-size:.8rem}
+.bar{height:14px;border-radius:99px;overflow:hidden;display:flex;margin-top:16px;background:var(--bg)}
+.bar i{display:block;height:100%;transition:width .4s}
+canvas{width:100%;height:280px;display:block}
+table{width:100%;border-collapse:collapse;font-size:.9rem;direction:ltr}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--card)}
+.scroll{max-height:300px;overflow:auto}
+.sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--mute);font-size:.9rem}
+button.act{background:linear-gradient(90deg,var(--a),var(--b));color:#052;border:0;padding:10px 18px;border-radius:10px;font-weight:700;cursor:pointer}
+h2{margin:0 0 12px;font-size:1.1rem}
+.tip{color:var(--mute);font-size:.8rem;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <button id="theme" title="מצב כהה/בהיר">🌓</button>
+  <h1>Ribit 📈</h1>
+  <p>ריבית דריבית בקלות – כמה כסף יהיה לך בסוף הדרך?</p>
+</header>
+
+<section class="card">
+  <div class="grid">
+    <div><label>סכום השקעה ראשוני (₪)</label><input type="number" id="p" value="50000" min="0" step="1000"></div>
+    <div><label>הפקדה שנתית קבועה (₪)</label><input type="number" id="d" value="12000" min="0" step="500"></div>
+    <div><label>מספר שנים: <b id="yv"></b></label><input type="range" id="y" min="1" max="50" value="20"></div>
+    <div><label>תשואה שנתית (%): <b id="rv"></b></label><input type="range" id="r" min="0" max="20" step="0.1" value="7"></div>
+  </div>
+  <div class="row">
+    <label class="sw"><input type="checkbox" id="inf"> התאם לאינפלציה</label>
+    <input type="number" id="ir" value="2.5" step="0.1" min="0" max="20" style="width:80px"> <span style="color:var(--mute);font-size:.85rem">% לשנה</span>
+  </div>
+  <div class="row">
+    <span style="color:var(--mute);font-size:.85rem">תרחישים:</span>
+    <button class="chip" data-s="4">🛡️ שמרני 4%</button>
+    <button class="chip" data-s="7">⚖️ מאוזן 7%</button>
+    <button class="chip" data-s="10">🚀 אגרסיבי 10%</button>
+  </div>
+</section>
+
+<section class="card big">
+  <div class="lbl">הסכום בסוף התקופה</div>
+  <div class="num" id="total">0</div>
+  <div class="lbl" id="real"></div>
+  <div class="bar"><i id="b1" style="background:var(--b)"></i><i id="b2" style="background:var(--a)"></i></div>
+  <div class="stats">
+    <div class="stat"><b id="sDep">0</b><span>🔵 הופקד סה״כ</span></div>
+    <div class="stat"><b id="sGain">0</b><span>🟢 רווח מריבית</span></div>
+    <div class="stat"><b id="sMult">0</b><span>✖️ מכפיל כסף</span></div>
+    <div class="stat"><b id="sDouble">–</b><span>⏱️ הכפלה (כלל 72)</span></div>
+  </div>
+</section>
+
+<section class="card"><h2>צמיחה לאורך השנים</h2><canvas id="cv"></canvas></section>
+
+<section class="card">
+  <h2>🎯 יעד: כמה זמן עד למיליון?</h2>
+  <div class="row" style="margin-top:0"><input type="number" id="goal" value="1000000" step="50000" style="max-width:200px">
+  <span id="goalOut" style="font-weight:700"></span></div>
+</section>
+
+<section class="card">
+  <h2>טבלה שנתית</h2>
+  <div class="scroll"><table><thead><tr><th>שנה</th><th>הופקד</th><th>רווח</th><th>יתרה</th></tr></thead><tbody id="tb"></tbody></table></div>
+  <div class="row"><button class="act" id="share">🔗 העתק קישור לשיתוף</button><button class="chip" id="csv">⬇️ ייצוא CSV</button></div>
+</section>
+
+<p class="tip">ההפקדה נכנסת בסוף כל שנה. החישוב להמחשה בלבד ואינו ייעוץ השקעות.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>'₪'+Math.round(n).toLocaleString('en-US');
+function sim(p,d,y,r,maxY){const rows=[];let b=p,dep=p;
+  for(let i=1;i<=(maxY||y);i++){b=b*(1+r/100)+d;dep+=d;rows.push({i,dep,b});}
+  return rows;}
+let rows=[];
+function calc(){
+  const p=+$('p').value||0,d=+$('d').value||0,y=+$('y').value,r=+$('r').value;
+  const ir=$('inf').checked?(+$('ir').value||0):0;
+  $('yv').textContent=y;$('rv').textContent=r.toFixed(1);
+  rows=sim(p,d,y,r);const last=rows[rows.length-1];
+  const real=last.b/Math.pow(1+ir/100,y);
+  $('total').textContent=fmt(last.b);
+  $('real').textContent=ir?`בערך קנייה של ${fmt(real)} בכסף של היום`:'';
+  $('sDep').textContent=fmt(last.dep);$('sGain').textContent=fmt(last.b-last.dep);
+  $('sMult').textContent=(last.dep?last.b/last.dep:0).toFixed(2)+'x';
+  $('sDouble').textContent=r>0?(72/r).toFixed(1)+' שנים':'–';
+  const pc=last.b?last.dep/last.b*100:0;$('b1').style.width=pc+'%';$('b2').style.width=(100-pc)+'%';
+  // goal
+  const g=+$('goal').value||0;let gy=null;
+  for(const x of sim(p,d,y,r,100)){if(x.b>=g){gy=x.i;break}}
+  $('goalOut').textContent=gy?`תגיע ליעד תוך ${gy} שנים 🎉`:'לא מגיעים ליעד תוך 100 שנה';
+  $('tb').innerHTML=rows.map(x=>`<tr><td>${x.i}</td><td>${fmt(x.dep)}</td><td>${fmt(x.b-x.dep)}</td><td><b>${fmt(x.b)}</b></td></tr>`).join('');
+  draw();
+  history.replaceState(null,'',`#p=${p}&d=${d}&y=${y}&r=${r}`);
+}
+function draw(){
+  const c=$('cv'),dpr=devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
+  c.width=W*dpr;c.height=H*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);
+  const cs=getComputedStyle(document.documentElement);
+  const max=rows[rows.length-1].b||1,n=rows.length,pad=10,bw=(W-pad*2)/n;
+  x.clearRect(0,0,W,H);
+  rows.forEach((r,i)=>{
+    const h1=r.dep/max*(H-30),h2=(r.b-r.dep)/max*(H-30),X=pad+i*bw;
+    x.fillStyle=cs.getPropertyValue('--b');x.fillRect(X+1,H-20-h1,bw-2,h1);
+    x.fillStyle=cs.getPropertyValue('--a');x.fillRect(X+1,H-20-h1-h2,bw-2,h2);
+  });
+  x.fillStyle=cs.getPropertyValue('--mute');x.font='12px system-ui';x.textAlign='center';
+  [0,Math.floor(n/2),n-1].forEach(i=>x.fillText('שנה '+rows[i].i,pad+i*bw+bw/2,H-4));
+}
+['p','d','y','r','inf','ir','goal'].forEach(i=>$(i).addEventListener('input',calc));
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{$('r').value=b.dataset.s;calc()});
+$('theme').onclick=()=>{const t=document.documentElement;t.dataset.theme=t.dataset.theme==='light'?'dark':'light';draw()};
+$('share').onclick=()=>{navigator.clipboard.writeText(location.href);$('share').textContent='✅ הועתק!';setTimeout(()=>$('share').textContent='🔗 העתק קישור לשיתוף',1500)};
+$('csv').onclick=()=>{const t='year,deposited,gain,balance\n'+rows.map(r=>[r.i,Math.round(r.dep),Math.round(r.b-r.dep),Math.round(r.b)].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='ribit.csv';a.click()};
+new URLSearchParams(location.hash.slice(1)).forEach((v,k)=>{if($(k)&&!isNaN(v))$(k).value=v});
+addEventListener('resize',draw);calc();
+</script>
+</body>
+</html>
