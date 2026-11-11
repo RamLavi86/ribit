@@ -66,6 +66,7 @@ h2{margin:0 0 12px;font-size:1.1rem}
   <div class="row">
     <label class="sw"><input type="checkbox" id="inf"> התאם לאינפלציה</label>
     <input type="number" id="ir" value="2.5" step="0.1" min="0" max="20" style="width:80px"> <span style="color:var(--mute);font-size:.85rem">% לשנה</span>
+    <label class="sw" id="idxw" style="display:none"><input type="checkbox" id="idx" checked> ההפקדה צמודה לאינפלציה</label>
   </div>
   <div class="row">
     <span style="color:var(--mute);font-size:.85rem">תרחישים:</span>
@@ -112,16 +113,17 @@ h2{margin:0 0 12px;font-size:1.1rem}
 <script>
 const $=id=>document.getElementById(id);
 const fmt=n=>$('cur').value+Math.round(n).toLocaleString('en-US');
-let G=0,FEE=0,INF=0;
+let G=0,FEE=0,INF=0,IDX=true;
 function sim(p,d,y,r,maxY){const rows=[];let b=p,dep=p,depR=p;
-  for(let i=1;i<=(maxY||y);i++){const dd=d*Math.pow(1+G/100,i-1),f=Math.pow(1+INF/100,i);
+  for(let i=1;i<=(maxY||y);i++){const f=Math.pow(1+INF/100,i),dd=d*Math.pow(1+G/100,i-1)*(INF&&IDX?f:1);
     b=b*(1+Math.max(r-FEE,-99)/100)+dd;dep+=dd;depR+=dd/f;
     rows.push({i,dep:INF?depR:dep,b:b/f});}
   return rows;}
 let rows=[],lo=[],hi=[];
 function calc(){
   const p=+$('p').value||0,d=+$('d').value||0,y=+$('y').value,r=+$('r').value;
-  G=+$('g').value||0;FEE=+$('fee').value||0;INF=$('inf').checked?(+$('ir').value||0):0;
+  G=+$('g').value||0;FEE=+$('fee').value||0;INF=$('inf').checked?(+$('ir').value||0):0;IDX=$('idx').checked;
+  $('idxw').style.display=INF?'inline-flex':'none';
   lo=sim(p,d,y,Math.max(r-2,0));hi=sim(p,d,y,r+2);
   $('yv').textContent=y;$('rv').textContent=r.toFixed(1);
   rows=sim(p,d,y,r);const last=rows[rows.length-1];
@@ -162,7 +164,7 @@ function draw(){
   x.fillStyle=cs.getPropertyValue('--mute');x.font='12px system-ui';x.textAlign='center';
   [0,Math.floor(n/2),n-1].forEach(i=>x.fillText('שנה '+rows[i].i,pad+i*bw+bw/2,H-4));
 }
-['p','d','y','r','inf','ir','goal','g','fee','cur'].forEach(i=>$(i).addEventListener('input',calc));
+['p','d','y','r','inf','ir','goal','g','fee','cur','idx'].forEach(i=>$(i).addEventListener('input',calc));
 $('cv').addEventListener('mousemove',e=>{
   const R=$('cv').getBoundingClientRect(),n=rows.length,i=Math.min(n-1,Math.max(0,Math.floor((e.clientX-R.left-10)/((R.width-20)/n))));
   const t=$('tip'),r=rows[i];t.style.display='block';t.style.left=Math.min(e.clientX-R.left+10,R.width-150)+'px';t.style.top='10px';
