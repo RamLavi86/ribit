@@ -112,24 +112,25 @@ h2{margin:0 0 12px;font-size:1.1rem}
 <script>
 const $=id=>document.getElementById(id);
 const fmt=n=>$('cur').value+Math.round(n).toLocaleString('en-US');
-let G=0,FEE=0;
-function sim(p,d,y,r,maxY){const rows=[];let b=p,dep=p;
-  for(let i=1;i<=(maxY||y);i++){const dd=d*Math.pow(1+G/100,i-1);b=b*(1+Math.max(r-FEE,-99)/100)+dd;dep+=dd;rows.push({i,dep,b});}
+let G=0,FEE=0,INF=0;
+function sim(p,d,y,r,maxY){const rows=[];let b=p,dep=p,depR=p;
+  for(let i=1;i<=(maxY||y);i++){const dd=d*Math.pow(1+G/100,i-1),f=Math.pow(1+INF/100,i);
+    b=b*(1+Math.max(r-FEE,-99)/100)+dd;dep+=dd;depR+=dd/f;
+    rows.push({i,dep:INF?depR:dep,b:b/f});}
   return rows;}
 let rows=[],lo=[],hi=[];
 function calc(){
   const p=+$('p').value||0,d=+$('d').value||0,y=+$('y').value,r=+$('r').value;
-  G=+$('g').value||0;FEE=+$('fee').value||0;
+  G=+$('g').value||0;FEE=+$('fee').value||0;INF=$('inf').checked?(+$('ir').value||0):0;
   lo=sim(p,d,y,Math.max(r-2,0));hi=sim(p,d,y,r+2);
-  const ir=$('inf').checked?(+$('ir').value||0):0;
   $('yv').textContent=y;$('rv').textContent=r.toFixed(1);
   rows=sim(p,d,y,r);const last=rows[rows.length-1];
-  const real=last.b/Math.pow(1+ir/100,y);
   $('total').textContent=fmt(last.b);
-  $('real').textContent=ir?`בערך קנייה של ${fmt(real)} בכסף של היום`:'';
+  $('real').textContent=INF?`✔️ כולל התאמה לאינפלציה (${INF}% לשנה) – הכל בכסף של היום`:'';
   $('sDep').textContent=fmt(last.dep);$('sGain').textContent=fmt(last.b-last.dep);
   $('sMult').textContent=(last.dep?last.b/last.dep:0).toFixed(2)+'x';
-  $('sDouble').textContent=r>0?(72/r).toFixed(1)+' שנים':'–';
+  const net=((1+(r-FEE)/100)/(1+INF/100)-1)*100;
+  $('sDouble').textContent=net>0?(72/net).toFixed(1)+' שנים':'–';
   $('sInc').textContent=fmt(last.b*0.04/12);
   $('sRange').textContent=fmt(lo[lo.length-1].b)+' – '+fmt(hi[hi.length-1].b);
   const pc=last.b?last.dep/last.b*100:0;$('b1').style.width=pc+'%';$('b2').style.width=(100-pc)+'%';
